@@ -1,0 +1,7 @@
+{
+  "name": "Component Repeater",
+  "id": "841419002542939116",
+  "api": "1.0.0",
+  "main": "code.js",
+  "ui": "ui.html"
+}
