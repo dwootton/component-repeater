@@ -446,7 +446,7 @@ let updateUIIntervalId = setInterval(() => {
 }, 500);
 
 function cloneNodeBasedOnType(copy: BaseNode, original: BaseNode) {
-  // console.log(original);
+  console.log(original);
   switch (original.type) {
     case 'SLICE':
       copySliceNode(copy, original);
@@ -483,14 +483,15 @@ function cloneNodeBasedOnType(copy: BaseNode, original: BaseNode) {
       copyTextNode(copy, original);
       break;
     default:
-      console.error('Some other node type, need to add functionality');
+
+      console.error('Some other node type, need to add functionality',original.type,original);
   }
 }
 
 /*-----------------------------------------------------------------------------
 HELPER FUNCTIONS
 -----------------------------------------------------------------------------*/
-
+let state = [];
 function updateUI(currentPageSelection) {
 
   let errorMsg = verifyUserInput(currentPageSelection);
@@ -584,62 +585,115 @@ function verifyUserInput(currentPageSelection: PageNode['selection']) {
 }
 
 
+function clearStateNodes(nodesToClear){
+  console.log('clearing',nodesToClear);
+  nodesToClear.forEach(node=>{
+    console.log(node);
+    if(node){
+      node.remove();
+    }
+    
+  })
+  state =[];
+}
+function cloneNodeOnOriginType(node){
+  let clonedNode;
+  console.log('in clone', node);
+  if(node.type === 'COMPONENT'){
+    clonedNode = node.createInstance();
+  } else {
+    clonedNode = node.clone();
+  }
+  return clonedNode;
 
-function cloneNodes(currentPageSelection) {
+}
+function cloneNodes(currentPageSelection,offsetX, offsetY) {
+  console.log('currentPageSelection',currentPageSelection);
+  // clear currently cloned nodes
   let newMasterComponent: ComponentNode; 
   let newInstanceNodes = [];
   let masterAssigned = false;
-
-  let clonedNodeXYOffset = 40; // Determines how far the nodes move from the original (x and y)
+  let clonedNodeXOffset = offsetX;
+  let clonedNodeYOffset = offsetY;
+  //let clonedNodeXYOffset = 10; // Determines how far the nodes move from the original (x and y)
 
   for (const node of currentPageSelection) {
 
     // If haven't found the master component yet, assign it and clone
-    if (!masterAssigned) {
+    /*if (!masterAssigned) {
       if (node.type == 'COMPONENT') { // If master component is first selected, clone it
+        console.log(node.type);
         newMasterComponent = node.clone();
       } else { // Clone the first instance it finds
+        console.log(node.type, node);
         newMasterComponent = node.masterComponent.clone();
       }
+      let coordinates = JSON.parse(JSON.stringify(node.absoluteTransform));
+      coordinates[0][2] += clonedNodeXOffset;
+      coordinates[1][2] += clonedNodeYOffset;
 
-      newMasterComponent['x'] = newMasterComponent['x'] + clonedNodeXYOffset;
-      newMasterComponent['y'] = newMasterComponent['y'] + clonedNodeXYOffset;
+      console.log(newMasterComponent['x'], newMasterComponent['y'],clonedNodeXOffset)
+
+      newMasterComponent['x'] = newMasterComponent['x'] + clonedNodeXOffset;
+      newMasterComponent['y'] = newMasterComponent['y'] + clonedNodeYOffset;
+      newMasterComponent.relativeTransform = coordinates;
+      console.log(newMasterComponent['x'], newMasterComponent['y'],clonedNodeXOffset)
+      console.log('compare',node,'new',newMasterComponent);
       masterAssigned = true;
+      state.push(newMasterComponent);
     }
+*/
 
-    if (node.type == 'INSTANCE') {
+    //if (node.type == 'INSTANCE') {
       // Make a new instance of the original node where the copied data will lay
       let originalInstanceNode: InstanceNode = node; // Suppress some type errors
-      let instanceNodeCopy: InstanceNode = originalInstanceNode.clone();
-
+      let instanceNodeCopy: InstanceNode = cloneNodeOnOriginType(originalInstanceNode)//.clone();
+      let coordinates = JSON.parse(JSON.stringify(originalInstanceNode.absoluteTransform));
+      coordinates[0][2] += clonedNodeXOffset;
+      coordinates[1][2] += clonedNodeYOffset;
       // Set the master of the new instance to the newly created one
-      instanceNodeCopy.masterComponent = newMasterComponent;
+      //instanceNodeCopy.masterComponent = newMasterComponent;
 
       // Copies all the original data of the node into the new one
       cloneNodeBasedOnType(instanceNodeCopy, originalInstanceNode);
+      console.log(instanceNodeCopy['x'], clonedNodeXOffset)
+      instanceNodeCopy['x'] = instanceNodeCopy['x'] + clonedNodeXOffset;
+      instanceNodeCopy['y'] = instanceNodeCopy['y'] + clonedNodeYOffset;
+      console.log(instanceNodeCopy['x'], clonedNodeXOffset)
+      instanceNodeCopy.relativeTransform = coordinates;
 
-      instanceNodeCopy['x'] = instanceNodeCopy['x'] + clonedNodeXYOffset;
-      instanceNodeCopy['y'] = instanceNodeCopy['y'] + clonedNodeXYOffset;
 
       // Add it to our array so we can select it by default later
       newInstanceNodes.push(instanceNodeCopy);
-
-    }
+      state.push(newMasterComponent);
+    //}
   }
+}
 
 // Calls to "parent.postMessage" from within the HTML page will trigger this
 // callback. The callback will be passed the "pluginMessage" property of the
 // posted message.
 figma.ui.onmessage = message => {
+  console.log(message);
   switch(message.type) {
     case 'cancel':
       figma.closePlugin();
       break;
     case 'clone':
+      console.log(updateUIIntervalId);
       clearInterval(updateUIIntervalId);
-      cloneNodes(figma.currentPage.selection);
+      console.log(figma.currentPage.selection);
+      let cumulativeOffset = 0;
+      clearStateNodes(state);
+      for(let i = 0; i <message.count ; i++){
+        cumulativeOffset += message.offset; // need to add component width/height
+        cloneNodes(figma.currentPage.selection,cumulativeOffset,0);
+      }
+      
+      //figma.closePlugin();
       break;
   }
+  /*
   // One way of distinguishing between different types of messages sent from
   // your HTML page is to use an object with a "type" property like this.
   if (message.type === 'create-rectangles') {
@@ -655,10 +709,8 @@ figma.ui.onmessage = message => {
     figma.currentPage.selection = nodes;
     figma.viewport.scrollAndZoomIntoView(nodes);
   }
-
+*/
   // Make sure to close the plugin when you're done. Otherwise the plugin will
   // keep running, which shows the cancel button at the bottom of the screen.
-  figma.closePlugin();
+  //
 };
-
-

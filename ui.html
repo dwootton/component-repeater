@@ -1,17 +1,68 @@
 <h2>Rectangle Creator</h2>
-<p>Count: <input id="count" value="5"></p>
+<div>
+  <p>X Count: <input id="xCount" value="3"></p>
+  <p>X Offset: <input disabled id="xOffsetBox" value="20"></p>
+</div>
+
+<div>
+  <p>Y Count: <input id="yCount" value="3"></p>
+  <p>Y Offset: <input disabled id="yOffsetBox" value="20"></p>
+</div>
+  
+
+
+
+
 <button id="create">Create</button>
 <button id="cancel">Cancel</button>
+
 <script>
 
-document.getElementById('create').onclick = () => {
-  const textbox = document.getElementById('count');
+
+
+
+const xCountBox = document.getElementById('xCount');
+const yCountBox = document.getElementById('yCount');
+const xOffsetBox = document.getElementById('xOffset');
+const yOffsetBox = document.getElementById('yOffset');
+
+
+
+
+
+
+function getVariable(id){
+  const textbox = document.getElementById(id);
   const count = parseInt(textbox.value, 10);
-  parent.postMessage({ pluginMessage: { type: 'create-rectangles', count } }, '*')
+  return count;
+}
+
+const sendUpdate = () => {
+  const xCount = getVariable('xCount');
+  const xOffset = getVariable('xOffset');
+  const yCount = getVariable('yCount');
+  const yOffset = getVariable('yOffset');
+  console.log(xCount , xOffset, yCount, yOffset);
+  parent.postMessage({ pluginMessage: { type: 'clone', xCount , xOffset, yCount, yOffset} }, '*')
 }
 
 document.getElementById('cancel').onclick = () => {
   parent.postMessage({ pluginMessage: { type: 'cancel' } }, '*')
 }
+function updateXCount(e){
+  console.log(e);
+  xOffsetBox.disabled = e.target.value !== '';
+  sendUpdate();
+}
 
+function updateYCount(e){
+  console.log(e);
+  yOffsetBox.disabled = e.target.value !== '';
+  sendUpdate();
+
+}
+
+yOffsetBox.addEventListener('input', updateYBox);
+countBox.addEventListener('input', sendUpdate);
+xOffsetBox.addEventListener('input', sendUpdate);
 </script>
