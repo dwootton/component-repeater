@@ -23,8 +23,8 @@
 
 const xCountBox = document.getElementById('xCount');
 const yCountBox = document.getElementById('yCount');
-const xOffsetBox = document.getElementById('xOffset');
-const yOffsetBox = document.getElementById('yOffset');
+const xOffsetBox = document.getElementById('xOffsetBox');
+const yOffsetBox = document.getElementById('yOffsetBox');
 
 
 
@@ -39,9 +39,9 @@ function getVariable(id){
 
 const sendUpdate = () => {
   const xCount = getVariable('xCount');
-  const xOffset = getVariable('xOffset');
+  const xOffset = getVariable('xOffsetBox');
   const yCount = getVariable('yCount');
-  const yOffset = getVariable('yOffset');
+  const yOffset = getVariable('yOffsetBox');
   console.log(xCount , xOffset, yCount, yOffset);
   parent.postMessage({ pluginMessage: { type: 'clone', xCount , xOffset, yCount, yOffset} }, '*')
 }
@@ -49,20 +49,23 @@ const sendUpdate = () => {
 document.getElementById('cancel').onclick = () => {
   parent.postMessage({ pluginMessage: { type: 'cancel' } }, '*')
 }
+
 function updateXCount(e){
   console.log(e);
-  xOffsetBox.disabled = e.target.value !== '';
+  console.log(e.target,e.target.value);
+  xOffsetBox.disabled = e.target.value === '';
   sendUpdate();
 }
 
 function updateYCount(e){
   console.log(e);
-  yOffsetBox.disabled = e.target.value !== '';
+  yOffsetBox.disabled = e.target.value === '';
   sendUpdate();
 
 }
 
-yOffsetBox.addEventListener('input', updateYBox);
-countBox.addEventListener('input', sendUpdate);
+yOffsetBox.addEventListener('input', sendUpdate);
+xCountBox.addEventListener('input', updateXCount);
+yCountBox.addEventListener('input', updateYCount);
 xOffsetBox.addEventListener('input', sendUpdate);
 </script>
